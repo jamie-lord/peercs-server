@@ -1,4 +1,8 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
+using System.Collections.Specialized;
+using System.Net;
+using System.Web;
 using WebSocketSharp;
 using WebSocketSharp.Server;
 
@@ -22,8 +26,24 @@ namespace peercs_server
         {
             protected override void OnOpen()
             {
-                var query = Context.RequestUri;
-                var id = ID;
+                Uri uri = Context.RequestUri;
+                string queryString = uri.Query;
+                NameValueCollection queryDictionary = HttpUtility.ParseQueryString(queryString);
+                string id = queryDictionary["id"];
+                string token = queryDictionary["token"];
+                string key = queryDictionary["token"];
+                IPAddress ip = Context.UserEndPoint.Address;
+
+                if (string.IsNullOrWhiteSpace(id) || string.IsNullOrWhiteSpace(token) || string.IsNullOrWhiteSpace(key))
+                {
+                    Context.WebSocket.SendAsync(JsonConvert.SerializeObject(), (complete) =>
+                    {
+                        if (complete)
+                        {
+                            Context.WebSocket.CloseAsync();
+                        }
+                    });
+                }
             }
 
             protected override void OnError(ErrorEventArgs e)
