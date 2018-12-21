@@ -36,19 +36,64 @@ namespace peercs_server
 
                 if (string.IsNullOrWhiteSpace(id) || string.IsNullOrWhiteSpace(token) || string.IsNullOrWhiteSpace(key))
                 {
-                    Context.WebSocket.SendAsync(JsonConvert.SerializeObject(), (complete) =>
+                    Context.WebSocket.SendAsync(JsonConvert.SerializeObject(new PeerCSResponse(PeerCSResponse.ResponseType.Error, "No id, token, or key supplied to websocket server")), (complete) =>
                     {
                         if (complete)
                         {
                             Context.WebSocket.CloseAsync();
                         }
                     });
+                    return;
                 }
+
+
             }
 
             protected override void OnError(ErrorEventArgs e)
             {
                 base.OnError(e);
+            }
+        }
+
+        public class Payload
+        {
+            [JsonProperty("msg")]
+            public string Message { get; set; }
+        }
+
+        public class PeerCSResponse
+        {
+            [JsonProperty("type")]
+            public string Type { get; set; }
+
+            [JsonProperty("payload")]
+            public Payload Payload { get; set; }
+
+            public PeerCSResponse(ResponseType type, string msg)
+            {
+                Type = ResponseTypeToString(type);
+                Payload = new Payload
+                {
+                    Message = msg
+                };
+            }
+
+            public enum ResponseType
+            {
+                Error,
+                Open
+            }
+
+            private string ResponseTypeToString(ResponseType responseType)
+            {
+                switch (responseType)
+                {
+                    case ResponseType.Open:
+                        return "OPEN";
+                    case ResponseType.Error:
+                    default:
+                        return "ERROR";
+                }
             }
         }
 
